@@ -5,26 +5,25 @@ const getAllUsers = () => {
   return dbPool.execute(SQLQuery);
 };
 
-const createNewUser = (body) => {
-  const SQLQuery = `  INSERT INTO users (username, email, password) 
-                        VALUES ('${body.username}', '${body.email}', '${body.password}')`;
+const createNewUser = (args) => {
+  const SQLQuery = `INSERT INTO users (username, email, password) 
+                          VALUES ('${args.username}', '${args.email}', '${args.password}')`;
   return dbPool.execute(SQLQuery);
 };
 
-const updateUser = (body, idUser) => {
-  const SQLQuery = `  UPDATE users 
-                        SET username='${body.password}', email='${body.email}', password='${body.password}' 
-                        WHERE id=${idUser}`;
+const updateUser = (args) => {
+  const SQLQuery = `UPDATE users SET username='${args.username}', email='${args.email}', password='${args.password}'
+                    WHERE id='${args.id}'`;
   return dbPool.execute(SQLQuery);
 };
 
-const deleteUser = (idUser) => {
-  const SQLQuery = `DELETE FROM users WHERE id=${idUser}`;
+const deleteUser = (args) => {
+  const SQLQuery = `DELETE FROM users WHERE id='${args.id}'`;
   return dbPool.execute(SQLQuery);
 };
 
-const getByIdUser = (idUser) => {
-  const SQLQuery = `SELECT * FROM users WHERE id=${idUser}`;
+const getByIdUser = (id) => {
+  const SQLQuery = `SELECT * FROM users WHERE id=${id}`;
   return dbPool.execute(SQLQuery);
 };
 

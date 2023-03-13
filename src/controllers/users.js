@@ -1,94 +1,51 @@
 const UsersModel = require("../models/users");
-
-const getAllUsers = async (req, res) => {
+const getAllUsers = async () => {
   try {
     const [data] = await UsersModel.getAllUsers();
-    console.log(data);
-    res.json({
-      message: "GET all users success",
-      data: data,
-    });
+    return data;
   } catch (error) {
-    res.status(500).json({
-      message: "Server Error",
-      serverMessage: error,
-    });
+    console.log(error);
   }
 };
 
-const getByIdUser = async (req, res) => {
+const createNewUser = async (args) => {
   try {
-    const { idUser } = req.params;
-    const [data] = await UsersModel.getByIdUser(idUser);
-
-    res.json({
-      message: "GET all users success",
-      data: data,
-    });
+    await UsersModel.createNewUser(args);
+    console.log("user created");
   } catch (error) {
-    res.status(500).json({
-      message: "Server Error",
-      serverMessage: error,
-    });
+    console.log(error);
   }
 };
 
-const createNewUser = async (req, res) => {
-  const { body } = req;
-  if (!body.email || !body.username || !body.password) {
-    return res.status(400).json({
-      message: "Anda mengirimkan data yang salah",
-      data: null,
-    });
-  }
-
+const updateUser = async (args) => {
   try {
-    await UsersModel.createNewUser(body);
-    res.status(201).json({
-      message: "CREATE new user success",
-      data: body,
-    });
+    await UsersModel.updateUser(args);
+    console.log("user updated");
   } catch (error) {
-    res.status(500).json({
-      message: "Server Error",
-      serverMessage: error,
-    });
+    console.log(error);
   }
 };
 
-const updateUser = async (req, res) => {
-  const { idUser } = req.params;
-  const { body } = req;
+const deleteUser = async (args) => {
   try {
-    await UsersModel.updateUser(body, idUser);
-    res.json({
-      message: "UPDATE user success",
-      data: {
-        id: idUser,
-        ...body,
-      },
-    });
+    await UsersModel.deleteUser(args);
+    console.log("user deleted");
   } catch (error) {
-    res.status(500).json({
-      message: "Server Error",
-      serverMessage: error,
-    });
+    console.log(error);
   }
 };
 
-const deleteUser = async (req, res) => {
-  const { idUser } = req.params;
+const getByIdUser = async (id) => {
   try {
-    await UsersModel.deleteUser(idUser);
-    res.json({
-      message: "DELETE user success",
-      data: null,
+    const [data] = await UsersModel.getByIdUser(id);
+    console.log({
+      user: data,
     });
+    return {
+      user: data,
+    };
   } catch (error) {
-    res.status(500).json({
-      message: "Server Error",
-      serverMessage: error,
-    });
+    console.log(error);
   }
 };
 
