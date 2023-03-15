@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true,
       autoIncrement: true,
     },
-    username: {
+    fullName: {
       type: DataTypes.STRING,
     },
     email: {
@@ -13,6 +13,9 @@ module.exports = (sequelize, DataTypes) => {
     },
     password: {
       type: DataTypes.STRING,
+    },
+    role: {
+      type: DataTypes.ENUM("superadmin", "admin"),
     },
   });
   return User;

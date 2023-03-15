@@ -4,3 +4,4 @@ DB_PASSWORD = xxx
 DB_NAME = xxx
 DB_DIALECT = xxx
 PORT = xxx
+API_SECRET=xxx
