@@ -11,24 +11,22 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
     idle: dbConfig.pool.idle,
   },
 });
-sequelize
-  .authenticate()
-  .then(() => {
-    console.log("connected..");
-  })
-  .catch((err) => {
-    console.log("Error" + err);
-  });
+// sequelize
+//   .authenticate()
+//   .then(() => {
+//     console.log("connected..");
+//   })
+//   .catch((err) => {
+//     console.log("Error" + err);
+//   });
 
 const db = {};
-
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
-
 db.User = require("./m_user")(sequelize, DataTypes);
 
-db.sequelize.sync({ force: false }).then(() => {
-  console.log("yes re-sync done!");
-});
+// db.sequelize.sync({ force: false }).then(() => {
+//   console.log("yes re-sync done!");
+// });
 
 module.exports = db;

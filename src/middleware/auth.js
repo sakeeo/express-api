@@ -1,36 +1,21 @@
 require("dotenv").config({ path: __dirname + "/./../../.env" });
+const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const db = require("../models/index");
-const User = db.User;
 
-const verifyToken = (req, res, next) => {
-  if (
-    req.headers &&
-    req.headers.authorization &&
-    req.headers.authorization.split(" ")[0] === "JWT"
-  ) {
-    jwt.verify(
-      req.headers.authorization.split(" ")[1],
-      process.env.API_SECRET,
-      function (err, decode) {
-        if (err) req.user = undefined;
-        User.findOne({
-          _id: decode.id,
-        }).exec((err, user) => {
-          if (err) {
-            res.status(500).send({
-              message: err,
-            });
-          } else {
-            req.user = user;
-            next();
-          }
-        });
-      }
-    );
-  } else {
-    req.user = undefined;
-    next();
-  }
+const generateAccessToken = (username) => {
+  return jwt.sign(username, process.env.TOKEN_SECRET, { expiresIn: "1800s" });
 };
-module.exports = verifyToken;
+
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (token == null) return res.sendStatus(401);
+  jwt.verify(token, process.env.TOKEN_SECRET, (err, user) => {
+    console.log(err);
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+};
+
+module.exports = { generateAccessToken, authenticateToken };

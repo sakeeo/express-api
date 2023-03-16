@@ -1,19 +1,26 @@
 var jwt = require("jsonwebtoken");
-var bcrypt = require("bcrypt");
 const db = require("../models/index");
-const { check, validationResult } = require("express-validator");
+const bcrypt = require("bcrypt");
 const User = db.User;
+const { validationResult } = require("express-validator");
 
 exports.signup = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(422).json({ errors: errors.array() });
+      return;
+    }
     const NewUser = {
       fullName: req.body.fullName,
       email: req.body.email,
-      password: req.body.password,
+      password: bcrypt.hash("sasasalksalksla", 10).then(function (hash) {
+        return hash;
+      }),
       role: req.body.role,
     };
     await User.create(NewUser);
-    delete NewUser.password;
+    // delete NewUser.password;
 
     res.status(201).send({
       message: "register berhasil",
@@ -29,6 +36,12 @@ exports.signup = async (req, res) => {
 
 exports.signin = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(422).json({ errors: errors.array() });
+      return;
+    }
+    console.log(errors);
     const user = await User.findOne({
       where: { email: req.body.email },
     });
@@ -37,7 +50,6 @@ exports.signin = async (req, res) => {
         message: "User Not found.",
       });
     }
-
     //comparing passwords
     var passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
     // checking if password was valid and send response accordingly
