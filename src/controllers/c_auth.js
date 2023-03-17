@@ -3,6 +3,7 @@ const db = require("../models/index");
 const bcrypt = require("bcrypt");
 const User = db.User;
 const { validationResult } = require("express-validator");
+const { generateAccessToken } = require("../middleware/auth");
 
 exports.signup = async (req, res) => {
   try {
@@ -11,21 +12,28 @@ exports.signup = async (req, res) => {
       res.status(422).json({ errors: errors.array() });
       return;
     }
-    const NewUser = {
-      fullName: req.body.fullName,
-      email: req.body.email,
-      password: bcrypt.hash("sasasalksalksla", 10).then(function (hash) {
-        return hash;
-      }),
-      role: req.body.role,
-    };
-    await User.create(NewUser);
-    // delete NewUser.password;
-
-    res.status(201).send({
-      message: "register berhasil",
-      data: NewUser,
-    });
+    var hashPassword = bcrypt.hashSync(req.body.password, 10);
+    User.sync({ alter: true })
+      .then(() => {
+        return User.create({
+          fullName: req.body.fullName,
+          email: req.body.email,
+          password: hashPassword,
+          role: req.body.role,
+        });
+      })
+      .then((data) => {
+        res.status(201).send({
+          message: "user created",
+          data,
+        });
+      })
+      .catch((err) => {
+        res.status(500).send({
+          message: "register gagal",
+          err_message: err.errors,
+        });
+      });
   } catch (e) {
     res.status(500).send({
       message: "register gagal",
@@ -41,7 +49,6 @@ exports.signin = async (req, res) => {
       res.status(422).json({ errors: errors.array() });
       return;
     }
-    console.log(errors);
     const user = await User.findOne({
       where: { email: req.body.email },
     });
@@ -50,25 +57,17 @@ exports.signin = async (req, res) => {
         message: "User Not found.",
       });
     }
-    //comparing passwords
-    var passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
-    // checking if password was valid and send response accordingly
-    if (!passwordIsValid) {
+
+    const match = await bcrypt.compare(req.body.password, user.password);
+    if (!match) {
       return res.status(401).send({
         accessToken: null,
         message: "Invalid Password!",
       });
     }
+
     //signing token with user id
-    var token = jwt.sign(
-      {
-        id: user.id,
-      },
-      process.env.API_SECRET,
-      {
-        expiresIn: 86400,
-      }
-    );
+    var token = generateAccessToken(req.body.email);
     //responding to client request with user profile success message and  access token .
     res.status(200).send({
       user: {
