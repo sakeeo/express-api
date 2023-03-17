@@ -1,36 +1,51 @@
 require("dotenv").config({ path: __dirname + "/./../../.env" });
 const jwt = require("jsonwebtoken");
-const db = require("../models/index");
-const User = db.User;
 
-const verifyToken = (req, res, next) => {
-  if (
-    req.headers &&
-    req.headers.authorization &&
-    req.headers.authorization.split(" ")[0] === "JWT"
-  ) {
-    jwt.verify(
-      req.headers.authorization.split(" ")[1],
-      process.env.API_SECRET,
-      function (err, decode) {
-        if (err) req.user = undefined;
-        User.findOne({
-          _id: decode.id,
-        }).exec((err, user) => {
-          if (err) {
-            res.status(500).send({
-              message: err,
-            });
-          } else {
-            req.user = user;
-            next();
-          }
-        });
-      }
-    );
-  } else {
-    req.user = undefined;
-    next();
-  }
+const generateAccessToken = (email) => {
+  return (token =
+    "Bearer " +
+    jwt.sign({ email }, process.env.TOKEN_SECRET, {
+      expiresIn: 86400,
+    }));
+
+  // 86400
 };
-module.exports = verifyToken;
+
+const authenticateToken = (req, res, next) => {
+  if (!req.headers["x-access-token"]) {
+    return res.status(403).send({
+      auth: false,
+      message: "Error",
+      errors: "No token provided",
+    });
+  }
+  let tokenHeader = req.headers["x-access-token"];
+  if (tokenHeader.split(" ")[0] !== "Bearer") {
+    return res.status(500).send({
+      auth: false,
+      message: "Error",
+      errors: "Incorrect token format",
+    });
+  }
+  let token = tokenHeader.split(" ")[1];
+  if (!token) {
+    return res.status(403).send({
+      auth: false,
+      message: "Error",
+      errors: "No token provided",
+    });
+  }
+  jwt.verify(token, process.env.TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(500).send({
+        auth: false,
+        message: "Error",
+        errors: err,
+      });
+    }
+    req.email = decoded.id;
+    next();
+  });
+};
+
+module.exports = { generateAccessToken, authenticateToken };

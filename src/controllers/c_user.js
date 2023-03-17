@@ -1,24 +1,7 @@
+const { validationResult } = require("express-validator");
+const bcrypt = require("bcrypt");
 const db = require("../models/index");
 const User = db.User;
-
-const create = async (req, res) => {
-  try {
-    const NewUser = await User.create({
-      username: req.body.username,
-      email: req.body.email,
-      password: req.body.password,
-    });
-    res.status(201).send({
-      message: "berhasil meyimpan",
-      data: NewUser,
-    });
-  } catch (e) {
-    res.status(500).send({
-      message: "gagal meyimpan",
-      error_message: e.message,
-    });
-  }
-};
 
 const getAll = async (req, res) => {
   try {
@@ -70,26 +53,67 @@ const deleteById = async (req, res) => {
 
 const updateById = async (req, res) => {
   try {
-    await User.update(
-      {
-        username: req.body.username,
-        email: req.body.email,
-        password: req.body.password,
-      },
-      {
-        where: {
-          id: req.params.id,
-        },
-      }
-    );
-    const updatedUser = await User.findByPk(req.params.id);
-    res.status(200).send({
-      message: `user ${req.params.id} updated`,
-      data: updatedUser,
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(422).json({ errors: errors.array() });
+      return;
+    }
+    const user = await User.findOne({
+      where: { email: req.body.email },
     });
+    if (!user) {
+      return res.status(404).send({
+        message: "User Not found.",
+      });
+    }
+
+    const match = await bcrypt.compare(req.body.old_password, user.password);
+    if (!match) {
+      return res.status(401).send({
+        accessToken: null,
+        message: "Invalid Password!",
+      });
+    }
+
+    const newPassMatch = req.body.new_password === req.body.retype_password;
+    if (!newPassMatch) {
+      return res.status(401).send({
+        accessToken: null,
+        message: "retype password not match",
+      });
+    }
+    var hashPassword = bcrypt.hashSync(req.body.new_password, 10);
+    User.sync({ alter: true })
+      .then(() => {
+        return User.update(
+          {
+            fullName: req.body.fullName,
+            email: req.body.email,
+            password: hashPassword,
+            role: req.body.role,
+          },
+          {
+            where: {
+              id: req.params.id,
+            },
+          }
+        );
+      })
+      .then((data) => {
+        res.status(201).send({
+          message: `user ${req.params.id} updated`,
+          data,
+        });
+      })
+      .catch((err) => {
+        res.status(500).send({
+          message: "register gagal",
+          err_message: err.errors,
+        });
+      });
   } catch (e) {
     res.status(500).send({
-      message: "gagal mengubah data",
+      message: "register gagal",
       error_message: e.message,
     });
   }
@@ -98,7 +122,6 @@ const updateById = async (req, res) => {
 module.exports = {
   getByid,
   getAll,
-  create,
   deleteById,
   updateById,
 };
